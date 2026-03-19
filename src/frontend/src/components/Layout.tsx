@@ -1,14 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { Link, Outlet } from "@tanstack/react-router";
 import { BookOpen, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useIsAdmin } from "../hooks/useQueries";
 
 export default function Layout() {
-  const { login, clear, loginStatus, identity } = useInternetIdentity();
+  const { login, clear, loginStatus, identity, loginError } =
+    useInternetIdentity();
   const isLoggedIn = loginStatus === "success" && !!identity;
   const isLoggingIn = loginStatus === "logging-in";
   const { data: isAdmin } = useIsAdmin();
+
+  useEffect(() => {
+    if (loginStatus === "loginError") {
+      toast.error(
+        "Login failed. Please try again or allow popups for this site.",
+      );
+    }
+  }, [loginStatus]);
+
+  useEffect(() => {
+    if (loginError) {
+      toast.error(loginError.message || "Login failed. Please try again.");
+    }
+  }, [loginError]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -39,7 +56,7 @@ export default function Layout() {
                   data-ocid="nav.admin_link"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">Manage Books</span>
+                  <span>Manage Books</span>
                 </Button>
               </Link>
             )}
@@ -52,7 +69,7 @@ export default function Layout() {
                 data-ocid="nav.logout_button"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </Button>
             ) : (
               <Button
@@ -64,9 +81,7 @@ export default function Layout() {
                 data-ocid="nav.login_button"
               >
                 <LogIn className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  {isLoggingIn ? "Logging in..." : "Admin Login"}
-                </span>
+                <span>{isLoggingIn ? "Logging in..." : "Admin Login"}</span>
               </Button>
             )}
           </nav>
