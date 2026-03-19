@@ -24,6 +24,7 @@ import {
   Pencil,
   Plus,
   ShieldAlert,
+  ShieldCheck,
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -32,6 +33,7 @@ import { toast } from "sonner";
 import BookForm from "../components/BookForm";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  useClaimFirstAdmin,
   useDeleteBook,
   useIsAdmin,
   useListBooks,
@@ -56,46 +58,62 @@ const CONDITION_VARIANT: Record<
   [BookCondition.fair]: "outline",
 };
 
-const FALLBACK_COVERS: Record<string, string> = {
-  "The Great Gatsby": "/assets/generated/book-gatsby.dim_300x400.jpg",
-  "To Kill a Mockingbird": "/assets/generated/book-mockingbird.dim_300x400.jpg",
-  "1984": "/assets/generated/book-1984.dim_300x400.jpg",
-  "Pride and Prejudice": "/assets/generated/book-pride.dim_300x400.jpg",
-  "The Alchemist": "/assets/generated/book-alchemist.dim_300x400.jpg",
-  Sapiens: "/assets/generated/book-sapiens.dim_300x400.jpg",
-};
+const FALLBACK_COVER = "/assets/generated/bookshop-hero.dim_1200x400.jpg";
 
 const ADMIN_SKELETON_KEYS = ["a", "b", "c", "d"];
 
 export default function AdminPage() {
-  const { identity, loginStatus } = useInternetIdentity();
+  const { identity, loginStatus, login } = useInternetIdentity();
   const isLoggedIn = loginStatus === "success" && !!identity;
+  const isLoggingIn = loginStatus === "logging-in";
   const { data: isAdmin, isLoading: checkingAdmin } = useIsAdmin();
   const { data: books, isLoading: booksLoading } = useListBooks();
   const deleteBook = useDeleteBook();
   const seedBooks = useSeedBooks();
+  const claimAdmin = useClaimFirstAdmin();
 
   const [addOpen, setAddOpen] = useState(false);
   const [editBook, setEditBook] = useState<Book | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  async function handleClaimAdmin() {
+    try {
+      const result = await claimAdmin.mutateAsync();
+      if (result) {
+        toast.success("Admin access granted! You can now manage books.");
+      } else {
+        toast.error(
+          "Admin is already set up for a different account. Please log in with the original admin account.",
+        );
+      }
+    } catch {
+      toast.error("Failed to set up admin. Please try again.");
+    }
+  }
+
+  // Not logged in
   if (!isLoggedIn) {
     return (
       <div
-        className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4"
+        className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 gap-4"
         data-ocid="admin.section"
       >
-        <ShieldAlert className="w-14 h-14 text-muted-foreground/40 mb-4" />
+        <ShieldAlert className="w-14 h-14 text-muted-foreground/40" />
         <h2 className="font-display text-2xl font-700 text-foreground">
           Admin Access Required
         </h2>
-        <p className="text-muted-foreground mt-2">
-          Please log in using the button in the header.
+        <p className="text-muted-foreground">
+          Please log in with Internet Identity to manage the catalog.
         </p>
+        <Button onClick={login} disabled={isLoggingIn} className="gap-2 mt-2">
+          <ShieldCheck className="w-4 h-4" />
+          {isLoggingIn ? "Logging in..." : "Log In"}
+        </Button>
       </div>
     );
   }
 
+  // Checking admin status
   if (checkingAdmin) {
     return (
       <div
@@ -107,15 +125,38 @@ export default function AdminPage() {
     );
   }
 
+  // Logged in but not admin — show claim button
   if (!isAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <ShieldAlert className="w-14 h-14 text-destructive/60 mb-4" />
+      <div
+        className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 gap-4"
+        data-ocid="admin.section"
+      >
+        <ShieldCheck className="w-14 h-14 text-amber-500" />
         <h2 className="font-display text-2xl font-700 text-foreground">
-          Not Authorized
+          Set Up Admin Access
         </h2>
-        <p className="text-muted-foreground mt-2">
-          Your account does not have admin privileges.
+        <p className="text-muted-foreground max-w-sm">
+          Tap the button below to activate your admin account. You only need to
+          do this once.
+        </p>
+        <Button
+          size="lg"
+          onClick={handleClaimAdmin}
+          disabled={claimAdmin.isPending}
+          className="gap-2 mt-2"
+          data-ocid="admin.claim_button"
+        >
+          {claimAdmin.isPending ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ShieldCheck className="w-4 h-4" />
+          )}
+          {claimAdmin.isPending ? "Setting up..." : "Activate Admin"}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          If this button says admin is already set, please log out and log back
+          in with the original admin account.
         </p>
       </div>
     );
@@ -196,17 +237,18 @@ export default function AdminPage() {
             No books yet
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            Click "Add Book" to add your first listing.
+            Click "Add Book" or "Seed Sample Books" to add your first listings.
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           <AnimatePresence>
             {books.map((book, i) => {
-              const coverSrc = book.imageId
-                ? ExternalBlob.fromURL(book.imageId).getDirectURL()
-                : (FALLBACK_COVERS[book.title] ??
-                  "/assets/generated/book-gatsby.dim_300x400.jpg");
+              const coverSrc = book.imageId?.startsWith("http")
+                ? book.imageId
+                : book.imageId
+                  ? ExternalBlob.fromURL(book.imageId).getDirectURL()
+                  : FALLBACK_COVER;
               return (
                 <motion.div
                   key={book.id}
@@ -222,8 +264,7 @@ export default function AdminPage() {
                     alt={book.title}
                     className="w-12 h-16 object-cover rounded flex-shrink-0"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "/assets/generated/book-gatsby.dim_300x400.jpg";
+                      (e.target as HTMLImageElement).src = FALLBACK_COVER;
                     }}
                   />
                   <div className="flex-1 min-w-0">
