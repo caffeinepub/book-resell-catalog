@@ -22,10 +22,10 @@ export default function Layout() {
             <BookOpen className="w-7 h-7 text-primary" />
             <div>
               <span className="font-display text-xl font-700 text-foreground leading-none">
-                The Book Nook
+                5aab Books
               </span>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                Curated books, fair prices
+                Curated reads at honest prices
               </p>
             </div>
           </Link>
@@ -80,7 +80,7 @@ export default function Layout() {
       <footer className="bg-card border-t border-border py-6 mt-10">
         <div className="container max-w-6xl mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>
-            &copy; {new Date().getFullYear()} The Book Nook. Built with{" "}
+            &copy; {new Date().getFullYear()} 5aab Books. Built with{" "}
             <span className="text-red-400">♥</span> using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
