@@ -64,7 +64,7 @@ const ADMIN_SKELETON_KEYS = ["a", "b", "c", "d"];
 
 export default function AdminPage() {
   const { identity, loginStatus, login } = useInternetIdentity();
-  const isLoggedIn = loginStatus === "success" && !!identity;
+  const isLoggedIn = !!identity;
   const isLoggingIn = loginStatus === "logging-in";
   const { data: isAdmin, isLoading: checkingAdmin } = useIsAdmin();
   const { data: books, isLoading: booksLoading } = useListBooks();
@@ -86,8 +86,15 @@ export default function AdminPage() {
           "Admin is already set up for a different account. Please log in with the original admin account.",
         );
       }
-    } catch {
-      toast.error("Failed to set up admin. Please try again.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("Not connected")) {
+        toast.error(
+          "Still connecting to the app. Please wait a moment and try again.",
+        );
+      } else {
+        toast.error(`Failed to set up admin: ${msg}`);
+      }
     }
   }
 

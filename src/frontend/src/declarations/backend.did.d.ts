@@ -61,6 +61,7 @@ export interface _SERVICE {
     undefined
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'claimFirstAdmin' : ActorMethod<[], boolean>,
   'deleteBook' : ActorMethod<[string], undefined>,
   'getBook' : ActorMethod<[string], Book>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,

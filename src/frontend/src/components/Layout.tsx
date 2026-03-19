@@ -8,7 +8,7 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 export default function Layout() {
   const { login, clear, loginStatus, identity, loginError } =
     useInternetIdentity();
-  const isLoggedIn = loginStatus === "success" && !!identity;
+  const isLoggedIn = !!identity;
   const isLoggingIn = loginStatus === "logging-in";
 
   useEffect(() => {
