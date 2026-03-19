@@ -104,3 +104,15 @@ export function useSeedBooks() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["books"] }),
   });
 }
+
+export function useClaimFirstAdmin() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (): Promise<boolean> => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).claimFirstAdmin();
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["isAdmin"] }),
+  });
+}

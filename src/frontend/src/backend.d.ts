@@ -34,6 +34,7 @@ export enum UserRole {
 export interface backendInterface {
     addBook(id: string, title: string, author: string, description: string, condition: BookCondition, price: string, imageId: string | null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    claimFirstAdmin(): Promise<boolean>;
     deleteBook(id: string): Promise<void>;
     getBook(id: string): Promise<Book>;
     getCallerUserProfile(): Promise<UserProfile | null>;

@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Link, Outlet } from "@tanstack/react-router";
-import { BookOpen, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { BookOpen, Loader2, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-import { useIsAdmin } from "../hooks/useQueries";
+import { useClaimFirstAdmin, useIsAdmin } from "../hooks/useQueries";
 
 export default function Layout() {
   const { login, clear, loginStatus, identity, loginError } =
@@ -12,6 +12,7 @@ export default function Layout() {
   const isLoggedIn = loginStatus === "success" && !!identity;
   const isLoggingIn = loginStatus === "logging-in";
   const { data: isAdmin } = useIsAdmin();
+  const claimAdmin = useClaimFirstAdmin();
 
   useEffect(() => {
     if (loginStatus === "loginError") {
@@ -26,6 +27,19 @@ export default function Layout() {
       toast.error(loginError.message || "Login failed. Please try again.");
     }
   }, [loginError]);
+
+  async function handleClaimAdmin() {
+    try {
+      const result = await claimAdmin.mutateAsync();
+      if (result) {
+        toast.success("Admin access granted!");
+      } else {
+        toast.error("Could not claim admin -- another admin already exists.");
+      }
+    } catch {
+      toast.error("Could not claim admin -- another admin already exists.");
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -59,6 +73,25 @@ export default function Layout() {
                   <span>Manage Books</span>
                 </Button>
               </Link>
+            )}
+            {isLoggedIn && isAdmin === false && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1 text-amber-600 hover:text-amber-700"
+                onClick={handleClaimAdmin}
+                disabled={claimAdmin.isPending}
+                data-ocid="nav.setup_admin_button"
+              >
+                {claimAdmin.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                <span>
+                  {claimAdmin.isPending ? "Setting up..." : "Set Up Admin"}
+                </span>
+              </Button>
             )}
             {isLoggedIn ? (
               <Button

@@ -44,6 +44,19 @@ actor {
     };
   };
 
+  // Claim first admin - only works if no admin has been assigned yet
+  public shared ({ caller }) func claimFirstAdmin() : async Bool {
+    if (AccessControl.isAdmin(accessControlState, caller)) {
+      return true; // already admin
+    };
+    if (not accessControlState.adminAssigned) {
+      accessControlState.userRoles.add(caller, #admin);
+      accessControlState.adminAssigned := true;
+      return true;
+    };
+    return false;
+  };
+
   // User Profile Management
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {

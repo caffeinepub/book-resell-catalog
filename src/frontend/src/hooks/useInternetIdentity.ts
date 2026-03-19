@@ -201,7 +201,6 @@ export function InternetIdentityProvider({
       onSuccess: handleLoginSuccess,
       onError: handleLoginError,
       maxTimeToLive: ONE_HOUR_IN_NANOSECONDS * BigInt(24 * 30), // 30 days
-      windowOpenerFeatures: `left=${window.screen.width / 2 - 250}, top=${window.screen.height / 2 - 400}, toolbar=0, location=0, menubar=0, width=500, height=800`,
     };
 
     setStatus("logging-in");
